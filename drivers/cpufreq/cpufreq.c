@@ -44,11 +44,13 @@ extern ssize_t acpuclk_get_vdd_levels_str(char *buf, int isApp);
 extern ssize_t acpuclk_get_vdd_levels_str_stock(char *buf, int isApp);
 extern void acpuclk_UV_mV_table(int cnt, int vdd_uv[]);
 extern unsigned int get_enable_oc(void);
-
+static unsigned int Lenable_auto_hotplug = 0;
 //Global placeholder for CPU policies
 static struct cpufreq_policy trmlpolicy[10];
 //Kthermal limit holder to stop govs from setting CPU speed higher than the thermal limit
 unsigned int kthermal_limit = 0;
+
+extern void apenable_auto_hotplug(bool state);
 
 /**
  * The "cpufreq driver" - the arch- or hardware-dependent low
@@ -761,6 +763,21 @@ static ssize_t show_bios_limit(struct cpufreq_policy *policy, char *buf)
 	return sprintf(buf, "%u\n", policy->cpuinfo.max_freq);
 }
 
+static ssize_t show_enable_auto_hotplug(struct cpufreq_policy *policy, char *buf)
+{
+	return sprintf(buf, "%u\n", Lenable_auto_hotplug);
+}
+static ssize_t store_enable_auto_hotplug(struct cpufreq_policy *policy,
+					const char *buf, size_t count)
+{
+	unsigned int val = 0;
+	unsigned int ret;
+	ret = sscanf(buf, "%u", &val);
+	Lenable_auto_hotplug = val;
+	apenable_auto_hotplug((bool) Lenable_auto_hotplug);
+	return count;
+}
+
 static ssize_t show_freq_lock(struct cpufreq_policy *policy, char *buf)
 {
 	return sprintf(buf, "%u\n", vfreq_lock);
@@ -800,6 +817,7 @@ cpufreq_freq_attr_rw(scaling_booted);
 cpufreq_freq_attr_rw(freq_lock);
 cpufreq_freq_attr_rw(UV_mV_table);
 cpufreq_freq_attr_ro(UV_mV_table_stock);
+cpufreq_freq_attr_rw(enable_auto_hotplug);
 
 static struct attribute *default_attrs[] = {
 	&cpuinfo_min_freq.attr,
@@ -818,6 +836,7 @@ static struct attribute *default_attrs[] = {
 	&freq_lock.attr,
 	&UV_mV_table.attr,
 	&UV_mV_table_stock.attr,
+	&enable_auto_hotplug.attr,
 	NULL
 };
 
