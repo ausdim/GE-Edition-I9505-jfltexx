@@ -45,16 +45,11 @@
 /* PATCH : SMART_UP */
 #define MIN(X, Y) ((X) < (Y) ? (X) : (Y))
 
-#undef SMART_UP_PLUS
-
-#if defined (SMART_UP_PLUS)
+#define SMART_UP_PLUS (1)
 #define SMART_UP_SLOW_UP_AT_HIGH_FREQ (1)
 #define SUP_MAX_STEP (3)
 #define SUP_CORE_NUM (4)
 #define SUP_SLOW_UP_DUR (2)
-#else
-#undef SMART_UP_SLOW_UP_AT_HIGH_FREQ
-#endif
 
 #if defined(SMART_UP_PLUS)
 static unsigned int SUP_THRESHOLD_STEPS[SUP_MAX_STEP] = {75, 85, 90};
