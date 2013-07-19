@@ -21,7 +21,7 @@
 #include <linux/cpumask.h>
 #include <asm/div64.h>
 
-#define CPUFREQ_NAME_LEN 16
+#define CPUFREQ_NAME_LEN 17
 
 extern int GLOBALKT_MIN_FREQ_LIMIT;
 extern int GLOBALKT_MAX_FREQ_LIMIT;
@@ -30,8 +30,9 @@ extern int GLOBALKT_MAX_FREQ_LIMIT;
 #define FREQ_TABLE_SIZE_OFFSET	8
 #define FREQ_STEPS		26
 
-#define MAX_VDD_SC    1450000 /* uV */
-#define MIN_VDD_SC     700000 /* uV */
+#define MAX_VDD_SC		1500000 /* uV */
+#define MIN_VDD_SC		700000 /* uV */
+#define MAX_VDD_MEM_DIG		1250000 /* uV */
 extern unsigned int kthermal_limit;
 
 /*********************************************************************
@@ -366,7 +367,7 @@ int get_min_freq(void);
 #define MAX_FREQ_LIMIT		get_max_freq() /* 1512000 */
 #define MIN_FREQ_LIMIT		get_min_freq() /* 384000 */
 
-#define MIN_TOUCH_LIMIT		1134000
+#define MIN_TOUCH_LIMIT		378000
 #define MIN_TOUCH_LIMIT_SECOND	810000
 
 #ifdef CONFIG_TARGET_SERIES_DALI
