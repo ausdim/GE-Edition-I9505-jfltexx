@@ -33,6 +33,7 @@
 #include <trace/events/power.h>
 
 //KT Specifics
+#define CPUS_AVAILABLE	num_possible_cpus()
 int GLOBALKT_MIN_FREQ_LIMIT = 378000;
 int GLOBALKT_MAX_FREQ_LIMIT = 1890000;
 
@@ -465,6 +466,7 @@ static ssize_t __ref store_scaling_min_freq(struct cpufreq_policy *policy, const
 {
 	unsigned int ret = -EINVAL;
 	unsigned int value = 0;
+	int cpu;
 	struct cpufreq_policy new_policy;
 
 	ret = sscanf(buf, "%u", &value);
@@ -484,6 +486,17 @@ static ssize_t __ref store_scaling_min_freq(struct cpufreq_policy *policy, const
 	ret = __cpufreq_set_policy(policy, &new_policy);
 	policy->user_policy.min = policy->min;
 
+	//Set extra CPU cores to same speed
+	for (cpu = 1; cpu < CPUS_AVAILABLE; cpu++)
+	{
+		if (!cpu_online(cpu)) cpu_up(cpu);
+		if (&trmlpolicy[cpu] != NULL)
+		{
+			ret = cpufreq_get_policy(&new_policy, cpu);
+			new_policy.min = value;
+			__cpufreq_set_policy(&trmlpolicy[cpu], &new_policy);
+		}
+	}
 	return count;
 }
 
@@ -499,6 +512,7 @@ static ssize_t __ref store_scaling_max_freq(struct cpufreq_policy *policy, const
 
 	if (vfreq_lock == 0)
 	{
+		int cpu;
 		if (value > GLOBALKT_MAX_FREQ_LIMIT)
 			value = GLOBALKT_MAX_FREQ_LIMIT;
 		if (value < GLOBALKT_MIN_FREQ_LIMIT)
@@ -510,6 +524,18 @@ static ssize_t __ref store_scaling_max_freq(struct cpufreq_policy *policy, const
 		new_policy.max = value;
 		ret = __cpufreq_set_policy(policy, &new_policy);
 		policy->user_policy.max = policy->max;
+		
+		//Set extra CPU cores to same speed
+		for (cpu = 1; cpu < CPUS_AVAILABLE; cpu++)
+		{
+			if (!cpu_online(cpu)) cpu_up(cpu);
+			if (&trmlpolicy[cpu] != NULL)
+			{
+				ret = cpufreq_get_policy(&new_policy, cpu);
+				new_policy.max = value;
+				__cpufreq_set_policy(&trmlpolicy[cpu], &new_policy);
+			}				
+		}
 	}
 	return count;
 }
