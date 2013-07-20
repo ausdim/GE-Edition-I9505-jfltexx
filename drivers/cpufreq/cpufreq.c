@@ -47,11 +47,13 @@ extern void acpuclk_UV_mV_table(int cnt, int vdd_uv[]);
 extern unsigned int get_enable_oc(void);
 static unsigned int Lenable_auto_hotplug = 0;
 //Global placeholder for CPU policies
-static struct cpufreq_policy trmlpolicy[10];
+struct cpufreq_policy trmlpolicy[10];
 //Kthermal limit holder to stop govs from setting CPU speed higher than the thermal limit
 unsigned int kthermal_limit = 0;
 
 extern void apenable_auto_hotplug(bool state);
+
+static bool never_set[10];
 
 /**
  * The "cpufreq driver" - the arch- or hardware-dependent low
@@ -673,7 +675,11 @@ static ssize_t store_scaling_governor(struct cpufreq_policy *policy,
 	ret = sscanf(buf, "%15s", str_governor);
 	if (ret != 1)
 		return -EINVAL;
-
+	pr_alert("STORE GOVERNOR %s - %s", str_governor, policy->governor->name);
+	if (!never_set[policy->cpu] && !strnicmp(str_governor, "ondemand", CPUFREQ_NAME_LEN) && policy->cpu > 0)
+		return -EINVAL;
+	never_set[policy->cpu] = true;
+	
 	if (cpufreq_parse_governor(str_governor, &new_policy.policy,
 						&new_policy.governor))
 		return -EINVAL;
@@ -686,7 +692,7 @@ static ssize_t store_scaling_governor(struct cpufreq_policy *policy,
 	policy->user_policy.governor = policy->governor;
 
 	sysfs_notify(&policy->kobj, NULL, "scaling_governor");
-
+	
 	if (ret)
 		return ret;
 	else
@@ -1966,8 +1972,6 @@ static int __cpufreq_set_policy(struct cpufreq_policy *data,
 	memcpy(&policy->cpuinfo, &data->cpuinfo,
 				sizeof(struct cpufreq_cpuinfo));
 	
-	memcpy(&trmlpolicy[policy->cpu], policy, sizeof(struct cpufreq_policy));
-	
 	if (vfreq_lock_tempOFF)
 		vfreq_lock = 1;
 
@@ -2073,6 +2077,7 @@ static int __cpufreq_set_policy(struct cpufreq_policy *data,
 		pr_debug("governor: change or update limits\n");
 		__cpufreq_governor(data, CPUFREQ_GOV_LIMITS);
 	}
+	memcpy(&trmlpolicy[policy->cpu], policy, sizeof(struct cpufreq_policy));
 
 error_out:
 	return ret;
