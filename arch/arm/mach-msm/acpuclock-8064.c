@@ -25,7 +25,7 @@
 
 //KT Specifics
 // enable_oc
-static unsigned int isenable_oc = 0;
+static unsigned int isenable_oc = 1;
 
 static struct hfpll_data hfpll_data __initdata = {
 	.mode_offset = 0x00,
