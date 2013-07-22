@@ -102,12 +102,13 @@ void rtl92cu_phy_rf6052_set_cck_txpower(struct ieee80211_hw *hw,
 		if (rtlpriv->dm.dynamic_txhighpower_lvl ==
 		    TXHIGHPWRLEVEL_LEVEL1) {
 			tx_agc[RF90_PATH_A] = 0x10101010;
-			tx_agc[RF90_PATH_B] = 0x10101010;
-		} else if (rtlpriv->dm.dynamic_txhighpower_lvl ==
+ 			tx_agc[RF90_PATH_B] = 0x10101010;
+ 		} else if (rtlpriv->dm.dynamic_txhighpower_lvl ==
+			   TXHIGHPWRLEVEL_LEVEL1) {
 			   TXHIGHPWRLEVEL_LEVEL2) {
-			tx_agc[RF90_PATH_A] = 0x00000000;
-			tx_agc[RF90_PATH_B] = 0x00000000;
-		} else{
+ 			tx_agc[RF90_PATH_A] = 0x00000000;
+ 			tx_agc[RF90_PATH_B] = 0x00000000;
+ 		} else{
 			for (idx1 = RF90_PATH_A; idx1 <= RF90_PATH_B; idx1++) {
 				tx_agc[idx1] = ppowerlevel[idx1] |
 				    (ppowerlevel[idx1] << 8) |
