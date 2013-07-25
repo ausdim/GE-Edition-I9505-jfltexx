@@ -41,6 +41,8 @@
 
 static DEFINE_SPINLOCK(elv_list_lock);
 static LIST_HEAD(elv_list);
+static struct request_queue *globalq[50];
+static unsigned int queue_size = 0;
 
 /*
  * Merge hash stuff.
@@ -269,6 +271,14 @@ int elevator_init(struct request_queue *q, char *name)
 	}
 
 	q->elevator = eq;
+	
+	q->index = queue_size;
+	globalq[queue_size] = q;
+	pr_alert("ELEVATOR_INIT:  %s-%d\n", q->elevator->type->elevator_name, queue_size);
+	queue_size += 1;
+	if (queue_size > 40)
+		queue_size = 10;
+
 	return 0;
 }
 EXPORT_SYMBOL(elevator_init);
@@ -583,6 +593,41 @@ void elv_requeue_request(struct request_queue *q, struct request *rq)
 	rq->cmd_flags &= ~REQ_STARTED;
 
 	__elv_add_request(q, rq, ELEVATOR_INSERT_REQUEUE);
+}
+
+/**
+ * elv_reinsert_request() - Insert a request back to the scheduler
+ * @q:		request queue where request should be inserted
+ * @rq:		request to be inserted
+ *
+ * This function returns the request back to the scheduler to be
+ * inserted as if it was never dispatched
+ *
+ * Return: 0 on success, error code on failure
+ */
+int elv_reinsert_request(struct request_queue *q, struct request *rq)
+{
+	int res;
+
+	if (!q->elevator->type->ops.elevator_reinsert_req_fn)
+		return -EPERM;
+
+	res = q->elevator->type->ops.elevator_reinsert_req_fn(q, rq);
+	if (!res) {
+		/*
+		 * it already went through dequeue, we need to decrement the
+		 * in_flight count again
+		 */
+		if (blk_account_rq(rq)) {
+			q->in_flight[rq_is_sync(rq)]--;
+			if (rq->cmd_flags & REQ_SORTED)
+				elv_deactivate_rq(q, rq);
+		}
+		rq->cmd_flags &= ~REQ_STARTED;
+		q->nr_sorted++;
+	}
+
+	return res;
 }
 
 void elv_drain_elevator(struct request_queue *q)
