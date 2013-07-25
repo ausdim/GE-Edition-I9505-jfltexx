@@ -35,8 +35,8 @@ modules.builtin
 *.tar
 *.zip
 *.log
-# *.rej
-# *.orig
+*.rej
+*.orig
 *zImage
 *boot.img
 *ramdisk
