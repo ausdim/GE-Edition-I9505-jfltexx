@@ -34,6 +34,7 @@
 
 #define CREATE_TRACE_POINTS
 #include <trace/events/cpufreq_interactive.h>
+unsigned int kt_freq_control[10] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
 
 static atomic_t active_count = ATOMIC_INIT(0);
 
@@ -427,6 +428,13 @@ static int cpufreq_interactive_up_task(void *data)
 				continue;
 
 			mutex_lock(&set_speed_lock);
+			
+			//KT hook
+			if (kt_freq_control[cpu] > 0)
+			{
+				max_freq = kt_freq_control[cpu];
+				goto skipcpu;
+			}
 
 			for_each_cpu(j, pcpu->policy->cpus) {
 				struct cpufreq_interactive_cpuinfo *pjcpu =
@@ -436,6 +444,7 @@ static int cpufreq_interactive_up_task(void *data)
 					max_freq = pjcpu->target_freq;
 			}
 
+skipcpu:
 			if (max_freq != pcpu->policy->cur)
 				__cpufreq_driver_target(pcpu->policy,
 							max_freq,
@@ -473,6 +482,13 @@ static void cpufreq_interactive_freq_down(struct work_struct *work)
 
 		mutex_lock(&set_speed_lock);
 
+		//KT hook
+		if (kt_freq_control[cpu] > 0)
+		{
+			max_freq = kt_freq_control[cpu];
+			goto skipcpu;
+		}
+
 		for_each_cpu(j, pcpu->policy->cpus) {
 			struct cpufreq_interactive_cpuinfo *pjcpu =
 				&per_cpu(cpuinfo, j);
@@ -481,6 +497,7 @@ static void cpufreq_interactive_freq_down(struct work_struct *work)
 				max_freq = pjcpu->target_freq;
 		}
 
+skipcpu:
 		if (max_freq != pcpu->policy->cur)
 			__cpufreq_driver_target(pcpu->policy, max_freq,
 						CPUFREQ_RELATION_H);
