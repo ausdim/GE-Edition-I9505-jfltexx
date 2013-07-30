@@ -49,7 +49,7 @@ extern void acpuclk_UV_mV_table(int cnt, int vdd_uv[]);
 extern unsigned int get_enable_oc(void);
 static bool Lonoff = false;
 static unsigned int Lscreen_off_scaling_enable = 1;
-static unsigned int Lscreen_off_scaling_mhz = 810000;
+static unsigned int Lscreen_off_scaling_mhz = 702000;
 static unsigned int Lscreen_off_scaling_mhz_orig = 1890000;
 static unsigned long Lscreen_off_GPU_mhz = 320000000;
 static bool call_in_progress=false;
@@ -2303,19 +2303,6 @@ int cpufreq_set_limit_defered(unsigned int flags, unsigned int value)
 	ret = cpufreq_get_policy(&new_policy, policy->cpu);		
 	if (ret)							
 		return -EINVAL;						
-
-	if (flags == USER_MIN_START)
-	{
-		new_policy.min = value;
-		ret = __cpufreq_set_policy(policy, &new_policy);		
-		policy->user_policy.min = policy->min;			
-	}
-	if (flags == USER_MAX_START)
-	{
-		new_policy.max = value;
-		ret = __cpufreq_set_policy(policy, &new_policy);		
-		policy->user_policy.max = policy->max;			
-	}
 	return 0;									
 }
 static void cpufreq_gov_resume(void)
@@ -2348,7 +2335,7 @@ static void cpufreq_gov_resume(void)
 			vfreq_lock_tempOFF = true;
 		}
 		value = Lscreen_off_scaling_mhz_orig;
-      	cpufreq_set_limit_defered(USER_MAX_START, value);
+			set_cpu_min_max(0, value, 0);
 		pr_alert("cpufreq_gov_resume_freq: %u\n", value);
 	}
 	
@@ -2399,7 +2386,7 @@ static void cpufreq_gov_suspend(void)
 				vfreq_lock_tempOFF = true;
 			}
 			value = Lscreen_off_scaling_mhz;
-      		cpufreq_set_limit_defered(USER_MAX_START, value);
+				set_cpu_min_max(0, value, 0);
 			pr_alert("cpufreq_gov_suspend_freq: %u\n", value);
 		}
 	}
