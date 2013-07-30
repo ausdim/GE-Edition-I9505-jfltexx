@@ -35,6 +35,7 @@
 //KT Specifics
 #define CPUS_AVAILABLE	num_possible_cpus()
 int cpufreq_set_limit_defered(unsigned int flags, unsigned int value);
+
 int GLOBALKT_MIN_FREQ_LIMIT = 378000;
 int GLOBALKT_MAX_FREQ_LIMIT = 1890000;
 
@@ -2347,6 +2348,7 @@ static void cpufreq_gov_resume(void)
 			vfreq_lock_tempOFF = true;
 		}
 		value = Lscreen_off_scaling_mhz_orig;
+      	cpufreq_set_limit_defered(USER_MAX_START, value);
 		pr_alert("cpufreq_gov_resume_freq: %u\n", value);
 	}
 	
@@ -2397,6 +2399,7 @@ static void cpufreq_gov_suspend(void)
 				vfreq_lock_tempOFF = true;
 			}
 			value = Lscreen_off_scaling_mhz;
+      		cpufreq_set_limit_defered(USER_MAX_START, value);
 			pr_alert("cpufreq_gov_suspend_freq: %u\n", value);
 		}
 	}
