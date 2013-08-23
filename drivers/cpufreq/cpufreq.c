@@ -2335,7 +2335,7 @@ static void cpufreq_gov_resume(void)
 			vfreq_lock_tempOFF = true;
 		}
 		value = Lscreen_off_scaling_mhz_orig;
-			set_cpu_min_max(0, value, 0);
+		set_cpu_min_max(0, value, 0);
 		pr_alert("cpufreq_gov_resume_freq: %u\n", value);
 	}
 	
@@ -2378,15 +2378,14 @@ static void cpufreq_gov_suspend(void)
 
 	if (Lscreen_off_scaling_enable == 1 && (!call_in_progress || Ldisable_som_call_in_progress == 0))
 	{
-		if (Lscreen_off_scaling_enable == 1)
-		{
+	{
 			if (vfreq_lock == 1)
 			{
 				vfreq_lock = 0;
 				vfreq_lock_tempOFF = true;
 			}
 			value = Lscreen_off_scaling_mhz;
-				set_cpu_min_max(0, value, 0);
+			set_cpu_min_max(0, value, 0);
 			pr_alert("cpufreq_gov_suspend_freq: %u\n", value);
 		}
 	}
