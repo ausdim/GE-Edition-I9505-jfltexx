@@ -35,9 +35,6 @@
 #define CREATE_TRACE_POINTS
 #include <trace/events/cpufreq_interactive.h>
 
-void setExtraCores(unsigned int requested_freq);
-unsigned int kt_freq_control[10] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
-
 static int active_count;
 
 struct cpufreq_interactive_cpuinfo {
