@@ -567,6 +567,9 @@ static void bds_check_cpu(struct cpu_bds_info_s *this_bds_info)
 
 	struct cpufreq_policy *policy;
 	unsigned int j;
+	static unsigned int phase = 0;
+	static unsigned int counter = 0;
+	unsigned int new_phase_max = 0;
 
 	this_bds_info->freq_lo = 0;
 	policy = this_bds_info->cur_policy;

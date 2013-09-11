@@ -673,7 +673,7 @@ static ssize_t store_lockout_2nd_core_hotplug(struct kobject *a, struct attribut
 				    const char *buf, size_t count)
 {
 	unsigned int input;
-	int ret;
+	int ret, cpu;
 	ret = sscanf(buf, "%u", &input);
 
 	if (input != 0 && input != 1 && input != 2)
@@ -700,7 +700,7 @@ static ssize_t store_lockout_3rd_core_hotplug(struct kobject *a, struct attribut
 				    const char *buf, size_t count)
 {
 	unsigned int input;
-	int ret;
+	int ret, cpu;
 	ret = sscanf(buf, "%u", &input);
 
 	if (input != 0 && input != 1 && input != 2)
@@ -727,7 +727,7 @@ static ssize_t store_lockout_4th_core_hotplug(struct kobject *a, struct attribut
 				    const char *buf, size_t count)
 {
 	unsigned int input;
-	int ret;
+	int ret, cpu;
 	ret = sscanf(buf, "%u", &input);
 
 	if (input != 0 && input != 1 && input != 2)
@@ -1325,7 +1325,7 @@ void boostpulse_relay_kt(void)
 {
 	if (!boostpulse_relayf)
 	{
-//		bool got_boost_core = false;
+		bool got_boost_core = false;
 
 		if (dbs_tuners_ins.touch_boost_2nd_core == 0 && dbs_tuners_ins.touch_boost_3rd_core == 0 && dbs_tuners_ins.touch_boost_4th_core == 0 && dbs_tuners_ins.touch_boost_cpu == 0) // && dbs_tuners_ins.touch_boost_gpu == 0)
 			return;
