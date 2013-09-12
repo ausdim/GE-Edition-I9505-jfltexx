@@ -901,7 +901,7 @@ static int __devinit gpio_keys_probe(struct platform_device *pdev)
 	int i, error;
 	int wakeup = 0;
 #ifdef CONFIG_SENSORS_HALL
-	int ret;
+	int ret = 0;
 	struct device *sec_key;
 #endif
 
