@@ -950,7 +950,7 @@ static void dbs_check_cpu(struct cpu_dbs_info_s *this_dbs_info)
 	}
 
 #endif
-/*
+
 	if ((num_online_cpus() > 1) && (dbs_tuners_ins.enable_turbo_mode)) {
 		if (max_load_other_cpu >
 				dbs_tuners_ins.up_threshold_any_cpu_load) {
@@ -968,7 +968,7 @@ static void dbs_check_cpu(struct cpu_dbs_info_s *this_dbs_info)
 			return;
 		}
 	}
-*/
+
 	/* Check for frequency decrease */
 	/* if we cannot reduce the frequency anymore, break out early */
 	if (policy->cur == policy->min)
