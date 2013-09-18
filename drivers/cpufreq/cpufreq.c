@@ -529,6 +529,7 @@ static ssize_t __ref store_scaling_min_freq(struct cpufreq_policy *policy, const
 {
 	unsigned int ret = -EINVAL;
 	unsigned int value = 0;
+	int cpu;
 	struct cpufreq_policy new_policy;
 
 	ret = sscanf(buf, "%u", &value);
@@ -567,6 +568,7 @@ static ssize_t __ref store_scaling_max_freq(struct cpufreq_policy *policy, const
 
 	if (vfreq_lock == 0)
 	{
+		int cpu;
 		if (value > GLOBALKT_MAX_FREQ_LIMIT)
 			value = GLOBALKT_MAX_FREQ_LIMIT;
 		if (value < GLOBALKT_MIN_FREQ_LIMIT)
@@ -2335,7 +2337,7 @@ static void cpufreq_gov_resume(void)
 			vfreq_lock_tempOFF = true;
 		}
 		value = Lscreen_off_scaling_mhz_orig;
-		set_cpu_min_max(0, value, 0);
+			set_cpu_min_max(0, value, 0);
 		pr_alert("cpufreq_gov_resume_freq: %u\n", value);
 	}
 	
@@ -2378,7 +2380,6 @@ static void cpufreq_gov_suspend(void)
 
 	if (Lscreen_off_scaling_enable == 1 && (!call_in_progress || Ldisable_som_call_in_progress == 0))
 	{
-	{
 			if (vfreq_lock == 1)
 			{
 				vfreq_lock = 0;
@@ -2388,7 +2389,6 @@ static void cpufreq_gov_suspend(void)
 			set_cpu_min_max(0, value, 0);
 			pr_alert("cpufreq_gov_suspend_freq: %u\n", value);
 		}
-	}
 	//GPU Control
 	if (Lscreen_off_GPU_mhz > 0 && (!call_in_progress || Ldisable_som_call_in_progress == 0))
 		set_max_gpuclk_so(Lscreen_off_GPU_mhz);
