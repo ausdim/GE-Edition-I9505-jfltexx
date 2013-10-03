@@ -21,7 +21,7 @@
  * software in any way with any other Broadcom software provided under a license
  * other than the GPL, without Broadcom's express prior written consent.
  *
- * $Id: dhd_sdio.c 400964 2013-05-08 05:16:50Z $
+ * $Id: dhd_sdio.c 411950 2013-07-11 08:23:59Z $
  */
 
 #include <typedefs.h>
@@ -886,7 +886,7 @@ dhdsdio_clk_kso_enab(dhd_bus_t *bus, bool on)
 		cmp_val = SBSDIO_FUNC1_SLEEPCSR_KSO_MASK |  SBSDIO_FUNC1_SLEEPCSR_DEVON_MASK;
 		bmask = cmp_val;
 
-		msleep(3);
+		OSL_SLEEP(3);
 	} else {
 		/* Put device to sleep, turn off  KSO  */
 		cmp_val = 0;
@@ -1041,7 +1041,8 @@ dhdsdio_clk_devsleep_iovar(dhd_bus_t *bus, bool on)
 		}
 
 		if ((bus->sih->chip == BCM4334_CHIP_ID) && (bus->sih->chiprev == 2)) {
-			SPINWAIT((bcmsdh_gpioin(bus->sdh, GPIO_DEV_SRSTATE) != TRUE),
+			SPINWAIT_SLEEP(sdioh_spinwait_sleep,
+				(bcmsdh_gpioin(bus->sdh, GPIO_DEV_SRSTATE) != TRUE),
 				GPIO_DEV_SRSTATE_TIMEOUT);
 
 			if (bcmsdh_gpioin(bus->sdh, GPIO_DEV_SRSTATE) == FALSE) {
@@ -1082,7 +1083,7 @@ dhdsdio_clk_devsleep_iovar(dhd_bus_t *bus, bool on)
 		do {
 			err = dhdsdio_clk_kso_enab(bus, TRUE);
 			if (err)
-				OSL_DELAY(10000);
+				OSL_SLEEP(10);
 		} while ((err != 0) && (++retry < 3));
 
 		if (err != 0) {
@@ -1095,7 +1096,8 @@ dhdsdio_clk_devsleep_iovar(dhd_bus_t *bus, bool on)
 			uint8 csr;
 
 			/* Wait for device ready during transition to wake-up */
-			SPINWAIT((((csr = dhdsdio_sleepcsr_get(bus)) &
+			SPINWAIT_SLEEP(sdioh_spinwait_sleep,
+				(((csr = dhdsdio_sleepcsr_get(bus)) &
 				SBSDIO_FUNC1_SLEEPCSR_DEVON_MASK) !=
 				(SBSDIO_FUNC1_SLEEPCSR_DEVON_MASK)), (20000));
 
@@ -1107,7 +1109,8 @@ dhdsdio_clk_devsleep_iovar(dhd_bus_t *bus, bool on)
 				err = BCME_NODEVICE;
 			}
 
-			SPINWAIT((((csr = bcmsdh_cfg_read(bus->sdh, SDIO_FUNC_1,
+			SPINWAIT_SLEEP(sdioh_spinwait_sleep,
+				(((csr = bcmsdh_cfg_read(bus->sdh, SDIO_FUNC_1,
 				SBSDIO_FUNC1_CHIPCLKCSR, &err)) & SBSDIO_HT_AVAIL) !=
 				(SBSDIO_HT_AVAIL)), (10000));
 
@@ -1848,7 +1851,7 @@ dhdsdio_txpkt(dhd_bus_t *bus, void *pkt, uint chan, bool free_pkt, bool queue_on
 	int ret;
 	osl_t *osh;
 	uint8 *frame;
-	uint16 len, pad1 = 0;
+	uint16 len, pad1 = 0, act_len = 0;
 	uint32 swheader;
 	uint retries = 0;
 	uint32 real_pad = 0;
@@ -1934,7 +1937,8 @@ dhdsdio_txpkt(dhd_bus_t *bus, void *pkt, uint chan, bool free_pkt, bool queue_on
 
 #ifdef BCMSDIOH_TXGLOM
 	if (bus->glom_enable) {
-		uint32 hwheader1 = 0, hwheader2 = 0, act_len = len;
+		uint32 hwheader1 = 0, hwheader2 = 0;
+		act_len = len;
 
 		/* Software tag: channel, sequence number, data offset */
 		swheader = ((chan << SDPCM_CHANNEL_SHIFT) & SDPCM_CHANNEL_MASK) |
@@ -2036,6 +2040,7 @@ dhdsdio_txpkt(dhd_bus_t *bus, void *pkt, uint chan, bool free_pkt, bool queue_on
 #ifdef BCMLXSDMMC
 				PKTSETLEN(osh, pkt, len);
 #endif /* BCMLXSDMMC */
+
 				/* Post the frame pointer to sdio glom array */
 				dhd_bcmsdh_glom_post(bus, frame, pkt, len);
 				/* Save the pkt pointer in bus glom array */
@@ -2051,7 +2056,7 @@ dhdsdio_txpkt(dhd_bus_t *bus, void *pkt, uint chan, bool free_pkt, bool queue_on
 	} else
 #endif /* BCMSDIOH_TXGLOM */
 	{
-		uint32 act_len = len;
+		act_len = len;
 		/* Software tag: channel, sequence number, data offset */
 		swheader = ((chan << SDPCM_CHANNEL_SHIFT) & SDPCM_CHANNEL_MASK) | bus->tx_seq |
 		        (((pad1 + SDPCM_HDRLEN) << SDPCM_DOFFSET_SHIFT) & SDPCM_DOFFSET_MASK);
@@ -2104,9 +2109,15 @@ dhdsdio_txpkt(dhd_bus_t *bus, void *pkt, uint chan, bool free_pkt, bool queue_on
 				DHD_ERROR(("CHK3: padding error size %d\n", real_pad));
 				ret = BCME_NOMEM;
 				goto done;
-			} else
+			}
+#ifndef BCMLXSDMMC
+			else
 				PKTSETLEN(osh, pkt, act_len);
+#endif
 		}
+#ifdef BCMLXSDMMC
+		PKTSETLEN(osh, pkt, len);
+#endif /* BCMLXSDMMC */
 	}
 	do {
 		ret = dhd_bcmsdh_send_buf(bus, bcmsdh_cur_sbwad(sdh), SDIO_FUNC_2, F2SYNC,
@@ -2187,7 +2198,11 @@ done:
 		} else
 #endif /* BCMSDIOH_TXGLOM */
 		{
-	PKTPULL(osh, pkt, SDPCM_HDRLEN + pad1);
+#ifdef BCMLXSDMMC
+			if (act_len > 0)
+				PKTSETLEN(osh, pkt, act_len);
+#endif /* BCMLXSDMMC */
+			PKTPULL(osh, pkt, SDPCM_HDRLEN + pad1);
 		}
 #ifdef PROP_TXSTATUS
 	if (bus->dhd->wlfc_state) {
@@ -4679,6 +4694,8 @@ dhd_txglom_enable(dhd_pub_t *dhdp, bool enable)
 	char buf[256];
 	uint32 rxglom;
 	int32 ret;
+
+	DHD_TRACE(("%s: Enter\n", __FUNCTION__));
 
 	if (enable) {
 		rxglom = 1;
@@ -8737,12 +8754,7 @@ dhd_bus_devreset(dhd_pub_t *dhdp, uint8 flag)
 						dhd_txflowcontrol(bus->dhd, ALL_INTERFACES, OFF);
 #endif 
 						dhd_os_wd_timer(dhdp, dhd_watchdog_ms);
-#ifdef BCMSDIOH_TXGLOM
-						if ((dhdp->busstate == DHD_BUS_DATA) &&
-							bcmsdh_glom_enabled()) {
-							dhd_txglom_enable(dhdp, TRUE);
-						}
-#endif /* BCMSDIOH_TXGLOM */
+
 						DHD_TRACE(("%s: WLAN ON DONE\n", __FUNCTION__));
 					} else {
 						dhd_bus_stop(bus, FALSE);
